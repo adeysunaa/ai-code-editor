@@ -56,7 +56,7 @@ const templates: TemplateOption[] = [
     name: "React",
     description:
       "A JavaScript library for building user interfaces with component-based architecture",
-    icon: "/react.svg",
+    icon: "/react.png",
     color: "#61DAFB",
     popularity: 5,
     tags: ["UI", "Frontend", "JavaScript"],
@@ -68,7 +68,7 @@ const templates: TemplateOption[] = [
     name: "Next.js",
     description:
       "The React framework for production with server-side rendering and static site generation",
-    icon: "/nextjs-icon.svg",
+    icon: "/next.svg",
     color: "#000000",
     popularity: 4,
     tags: ["React", "SSR", "Fullstack"],
@@ -92,7 +92,7 @@ const templates: TemplateOption[] = [
     name: "Vue.js",
     description:
       "Progressive JavaScript framework for building user interfaces with an approachable learning curve",
-    icon: "/vuejs-icon.svg",
+    icon: "/vue.png",
     color: "#4FC08D",
     popularity: 4,
     tags: ["UI", "Frontend", "JavaScript"],
@@ -153,7 +153,7 @@ const TemplateSelectionModal = ({
       template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       template.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       template.tags.some((tag) =>
-        tag.toLowerCase().includes(searchQuery.toLowerCase())
+        tag.toLowerCase().includes(searchQuery.toLowerCase()),
       );
 
     const matchesCategory =
@@ -188,10 +188,10 @@ const TemplateSelectionModal = ({
 
       const template = templates.find((t) => t.id === selectedTemplate);
       onSubmit({
-        title:projectName || `New ${template?.name} Project`,
-        template:templateMap[selectedTemplate] || "REACT",
-        description:template?.description
-      })
+        title: projectName || `New ${template?.name} Project`,
+        template: templateMap[selectedTemplate] || "REACT",
+        description: template?.description,
+      });
       onClose();
       // Reset state for next time
       setStep("select");
