@@ -8,7 +8,7 @@ import { getAccountByUserId, getUserById } from "./modules/auth/actions";
 export const { auth, handlers, signIn, signOut } = NextAuth({
   callbacks: {
     /**
-     * Handle user creation and account linking after a successful sign-in
+     * Handle user creation and account linking after a successful sign-in test test
      */
     async signIn({ user, account, profile }) {
       if (!user || !account) return false;
