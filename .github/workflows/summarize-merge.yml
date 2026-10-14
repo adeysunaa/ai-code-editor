@@ -1,70 +1,54 @@
-name: Summarize Merged Pull Request
+steps:
+  - name: Generate AI summary with Gemini
+    uses: actions/github-script@v7
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    with:
+      script: |
+        const pr = context.payload.pull_request;
 
-on:
-  pull_request:
-    types: [closed]
-    branches:
-      - main
+        const response = await fetch(
+          "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-goog-api-key": process.env.GEMINI_API_KEY,
+            },
+            body: JSON.stringify({
+              contents: [{
+                parts: [{
+                  text: `Summarize this merged pull request in simple English.
+        Explain what changed, why it matters, and important files.
+        Keep the summary concise.
 
-permissions:
-  contents: read
-  pull-requests: write
-  issues: write
+        Title: ${pr.title}
+        Description: ${pr.body || "No description provided"}`
+                }]
+              }]
+            })
+          }
+        );
 
-jobs:
-  summarize:
-    if: github.event.pull_request.merged == true
-    runs-on: ubuntu-latest
+        if (!response.ok) {
+          throw new Error(
+            `Gemini API error: ${response.status} ${await response.text()}`
+          );
+        }
 
-    steps:
-      - name: Generate AI summary
-        uses: actions/github-script@v7
-        env:
-          OPENAI_API_KEY: ${{ secrets.GITHUB }}
-        with:
-          script: |
-            const pr = context.payload.pull_request;
+        const result = await response.json();
+        const summary =
+          result.candidates?.[0]?.content?.parts
+            ?.map(part => part.text || "")
+            .join("\n") || "";
 
-            const response = await fetch(
-              "https://api.openai.com/v1/responses",
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-                },
-                body: JSON.stringify({
-                  model: "gpt-4.1-mini",
-                  input: `Summarize this merged pull request in simple English.
-            Explain what changed, why it matters, and any important files.
-            Keep the summary concise.
+        if (!summary) {
+          throw new Error("Gemini returned an empty summary.");
+        }
 
-            Title: ${pr.title}
-            Description: ${pr.body || "No description provided"}`
-                }),
-              }
-            );
-
-            if (!response.ok) {
-              throw new Error(
-                `OpenAI API error: ${response.status} ${await response.text()}`
-              );
-            }
-
-            const result = await response.json();
-            const summary = result.output
-              .flatMap(item => item.content || [])
-              .filter(item => item.type === "output_text")
-              .map(item => item.text)
-              .join("\n");
-
-            if (!summary) {
-              throw new Error("OpenAI returned an empty summary.");
-            }
-
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: pr.number,
-              body: `## AI Merge Summary\n\n${summary}`,
-            });
+        await github.rest.issues.createComment({
+          owner: context.repo.owner,
+          repo: context.repo.repo,
+          issue_number: pr.number,
+          body: `## AI Merge Summary\n\n${summary}`,
+        });
